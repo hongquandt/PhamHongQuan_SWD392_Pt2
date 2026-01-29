@@ -1,0 +1,150 @@
+@startuml
+class org.example.Main {
++ {static} void main(String[])
+}
+
+class org.example.model.Room {
+- String id
+- RoomType type
+- double price
+- Hotel hotel
++ String getId()
++ void setId(String)
++ RoomType getType()
++ void setType(RoomType)
++ double getPrice()
++ void setPrice(double)
++ Hotel getHotel()
++ void setHotel(Hotel)
+}
+
+
+class org.example.model.Invoice {
+- String id
+- double amount
+- LocalDateTime issueDate
+- Booking booking
++ String getId()
++ void setId(String)
++ double getAmount()
++ void setAmount(double)
++ LocalDateTime getIssueDate()
++ void setIssueDate(LocalDateTime)
++ Booking getBooking()
++ void setBooking(Booking)
+}
+
+
+class org.example.service.BookingService {
+- IBookingRepository bookingRepository
++ Booking makeReservation(String,List<String>,LocalDate,LocalDate)
++ boolean cancelReservation(String)
++ boolean checkAvailability(List<String>,LocalDate,LocalDate)
++ double calculateTotal(Booking)
++ void applyDiscount(Booking,String)
+}
+
+
+class org.example.model.Payment {
+- String id
+- double amount
+- LocalDateTime paymentDate
+- Booking booking
++ String getId()
++ void setId(String)
++ double getAmount()
++ void setAmount(double)
++ LocalDateTime getPaymentDate()
++ void setPaymentDate(LocalDateTime)
++ Booking getBooking()
++ void setBooking(Booking)
+}
+
+
+enum org.example.model.RoomType {
++  SINGLE
++  DOUBLE
++  SUITE
+}
+
+class org.example.model.Hotel {
+- String id
+- String name
+- List<Room> rooms
++ String getId()
++ void setId(String)
++ String getName()
++ void setName(String)
++ List<Room> getRooms()
++ void setRooms(List<Room>)
++ void addRoom(Room)
+}
+
+
+class org.example.model.Booking {
+- String id
+- LocalDate checkInDate
+- LocalDate checkOutDate
+- Guest guest
+- List<Room> rooms
+- Invoice invoice
+- Payment payment
++ String getId()
++ void setId(String)
++ LocalDate getCheckInDate()
++ void setCheckInDate(LocalDate)
++ LocalDate getCheckOutDate()
++ void setCheckOutDate(LocalDate)
++ Guest getGuest()
++ void setGuest(Guest)
++ List<Room> getRooms()
++ void setRooms(List<Room>)
++ Invoice getInvoice()
++ void setInvoice(Invoice)
++ Payment getPayment()
++ void setPayment(Payment)
+}
+
+
+interface org.example.service.IBookingService {
+~ Booking makeReservation(String,List<String>,LocalDate,LocalDate)
+~ boolean cancelReservation(String)
+~ boolean checkAvailability(List<String>,LocalDate,LocalDate)
+~ double calculateTotal(Booking)
+~ void applyDiscount(Booking,String)
+}
+
+class org.example.model.Guest {
+- String id
+- String name
+- String email
+- List<Booking> bookings
++ String getId()
++ void setId(String)
++ String getName()
++ void setName(String)
++ String getEmail()
++ void setEmail(String)
++ List<Booking> getBookings()
++ void setBookings(List<Booking>)
+}
+
+
+class org.example.controller.BookingController {
+- IBookingService bookingService
++ Booking makeReservation(String,List<String>,LocalDate,LocalDate)
++ boolean cancelReservation(String)
+}
+
+
+interface org.example.repository.IBookingRepository {
+~ Booking save(Booking)
+~ Optional<Booking> findById(String)
+~ List<Booking> findAll()
+~ void deleteById(String)
+}
+
+
+
+org.example.service.IBookingService <|.. org.example.service.BookingService
+@enduml
