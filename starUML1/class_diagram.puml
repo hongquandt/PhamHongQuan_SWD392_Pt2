@@ -1,26 +1,59 @@
-@startuml
-left to right direction
-skinparam classAttributeIconSize 0
+@startuml Hotel Booking System - Class Diagram
 
-package "Controller Layer" {
+' ============================================
+' STYLING & LAYOUT CONFIGURATION
+' ============================================
+top to bottom direction
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 100
+
+' Color scheme for different layers
+skinparam package {
+  BackgroundColor<<controller>> #E3F2FD
+  BorderColor<<controller>> #1976D2
+  BackgroundColor<<service>> #FFF3E0
+  BorderColor<<service>> #F57C00
+  BackgroundColor<<repository>> #F3E5F5
+  BorderColor<<repository>> #7B1FA2
+  BackgroundColor<<entity>> #E8F5E9
+  BorderColor<<entity>> #388E3C
+}
+
+skinparam class {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor #555555
+}
+
+' ============================================
+' CONTROLLER LAYER
+' ============================================
+package "Controller Layer" <<controller>> {
   class BookingController {
     - bookingService : IBookingService
-    + makeReservation(guestId: String, roomIds: List<String>, checkIn: LocalDate, checkOut: LocalDate) : Booking
+    __
+    + makeReservation(guestId: String, roomIds: List<String>, \n    checkIn: LocalDate, checkOut: LocalDate) : Booking
     + cancelReservation(bookingId: String) : boolean
   }
 }
 
-package "Service Layer" {
+' ============================================
+' SERVICE LAYER
+' ============================================
+package "Service Layer" <<service>> {
   interface IBookingService {
-    + makeReservation(guestId: String, roomIds: List<String>, checkIn: LocalDate, checkOut: LocalDate) : Booking
+    + makeReservation(guestId: String, roomIds: List<String>, \n    checkIn: LocalDate, checkOut: LocalDate) : Booking
     + cancelReservation(bookingId: String) : boolean
-    + checkAvailability(roomIds: List<String>, checkIn: LocalDate, checkOut: LocalDate) : boolean
+    + checkAvailability(roomIds: List<String>, \n    checkIn: LocalDate, checkOut: LocalDate) : boolean
     + calculateTotal(booking: Booking) : double
     + applyDiscount(booking: Booking, discountCode: String) : void
   }
 
   class BookingService {
     - bookingRepository : IBookingRepository
+    __
     + makeReservation(...)
     + cancelReservation(...)
     + checkAvailability(...)
@@ -29,7 +62,10 @@ package "Service Layer" {
   }
 }
 
-package "Repository Layer" {
+' ============================================
+' REPOSITORY LAYER
+' ============================================
+package "Repository Layer" <<repository>> {
   interface IBookingRepository {
     + save(booking: Booking) : Booking
     + findById(id: String) : Optional<Booking>
@@ -38,71 +74,114 @@ package "Repository Layer" {
   }
 }
 
-package "Entities" {
-  class Hotel {
-    - id : String
-    - name : String
-    + getRooms() : List<Room>
+' ============================================
+' DOMAIN ENTITIES
+' ============================================
+package "Domain Entities" <<entity>> {
+  
+  ' Core Business Entities
+  together {
+    class Hotel {
+      - id : String
+      - name : String
+      __
+      + getRooms() : List<Room>
+    }
+
+    class Room {
+      - id : String
+      - price : double
+      - type : RoomType
+    }
+
+    enum RoomType {
+      SINGLE
+      DOUBLE
+      SUITE
+      __
+      - capacity : int
+      - basePrice : double
+      - description : String
+      __
+      + getCapacity() : int
+      + getBasePrice() : double
+      + getDescription() : String
+    }
   }
 
-  class Room {
-    - id : String
-    - price : double
+  ' Booking Related Entities
+  together {
+    class Guest {
+      - id : String
+      - name : String
+      - email : String
+    }
+
+    class Booking {
+      - id : String
+      - checkInDate : LocalDate
+      - checkOutDate : LocalDate
+      __
+      + getRooms() : List<Room>
+    }
   }
 
-  enum RoomType {
-    SINGLE
-    DOUBLE
-    SUITE
-  }
+  ' Financial Entities
+  together {
+    class Invoice {
+      - id : String
+      - amount : double
+      - issueDate : LocalDateTime
+    }
 
-  class Guest {
-    - id : String
-    - name : String
-    - email : String
-  }
-
-  class Booking {
-    - id : String
-    - checkInDate : LocalDate
-    - checkOutDate : LocalDate
-    + getRooms() : List<Room>
-  }
-
-  class Invoice {
-    - id : String
-    - amount : double
-    - issueDate : LocalDateTime
-  }
-
-  class Payment {
-    - id : String
-    - amount : double
-    - paymentDate : LocalDateTime
+    class Payment {
+      - id : String
+      - amount : double
+      - paymentDate : LocalDateTime
+    }
   }
 }
 
-' Relationships
-BookingController ..> IBookingService : uses
-BookingService ..|> IBookingService : implements
-BookingService ..> IBookingRepository : uses
+' ============================================
+' LAYER DEPENDENCIES
+' ============================================
+BookingController ..> IBookingService : << uses >>
+BookingService ..|> IBookingService : << implements >>
+BookingService ..> IBookingRepository : << uses >>
 
-' Entity Relationships based on Doc Logic
-Hotel "1" *-- "0..*" Room : Composition >
-Room "0..*" -- "1" RoomType : has type >
-Guest "1" -- "0..*" Booking : makes >
+' ============================================
+' ENTITY RELATIONSHIPS
+' ============================================
 
-' The missing link requested by user logic
-Booking "1" o-- "1..*" Room : includes >
+' Hotel and Room relationship (Composition)
+Hotel "1" *-down- "0..*" Room : contains ▸
 
-' Logic: Invoice kept after Booking delete (Association)
-Booking "1" --> "0..1" Invoice : generates >
+' Room and RoomType relationship
+Room "0..*" -right- "1" RoomType : has type ▸
 
-' Logic: Payment loses value after Booking delete (Composition)
-Booking "1" *-- "0..1" Payment : contains >
+' Guest and Booking relationship
+Guest "1" -down- "0..*" Booking : makes ▸
 
-' Service Dependency on Entities for calculation
-BookingService ..> Booking : processes >
-BookingService ..> Room : checks >
+' Booking and Room relationship (Aggregation)
+Booking "1" o-right- "1..*" Room : includes ▸
+
+' Booking and Invoice relationship (Association - survives deletion)
+Booking "1" -down-> "0..1" Invoice : generates ▸
+
+' Booking and Payment relationship (Composition - deleted together)
+Booking "1" *-down- "0..1" Payment : contains ▸
+
+' ============================================
+' SERVICE TO ENTITY DEPENDENCIES
+' ============================================
+BookingService ..> Booking : << processes >>
+BookingService ..> Room : << checks >>
+
+' ============================================
+' LAYOUT HINTS
+' ============================================
+Hotel -[hidden]down- Guest
+Room -[hidden]down- Booking
+RoomType -[hidden]down- Invoice
 
 @enduml
